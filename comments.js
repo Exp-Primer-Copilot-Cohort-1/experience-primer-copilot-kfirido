@@ -1,54 +1,43 @@
 //create web server
-var express = require('express');
-var app = express();
-var bodyParser = require('body-parser');
-var fs = require("fs");
-var path = require("path");
-
+const express = require('express');
+const app = express();
+const path = require('path');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/listComments', function (req, res) {
-  console.log("Got a GET request for /listComments");
-  fs.readFile( __dirname + "/" + "comments.json", 'utf8', function (err, data) {
-    console.log( data );
-    res.end( data );
-  });
-})
+//set up the server
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
+});
 
-app.post('/addComment', function (req, res) {
-  console.log("Got a POST request for /addComment");
-  // First read existing comments.
-  fs.readFile( __dirname + "/" + "comments.json", 'utf8', function (err, data) {
-    data = JSON.parse( data );
-    data["comment" + req.body.id] = req.body.comment;
-    console.log( data );
-    fs.writeFile(__dirname + "/" + "comments.json", JSON.stringify(data), function (err) {
-      if (err) {
-        console.log(err);
-      }
+//set up the public folder
+app.use(express.static(path.join(__dirname, 'public')));
+
+//get request
+app.get('/comments', (req, res) => {
+    fs.readFile('data.json', 'utf8', (err, data) => {
+        if (err) {
+            console.log('Error reading file');
+        }
+        res.send(data);
     });
-    res.end( JSON.stringify(data));
-  });
-})
+});
 
-app.delete('/deleteComment', function (req, res) {
-  console.log("Got a DELETE request for /deleteComment");
-  fs.readFile( __dirname + "/" + "comments.json", 'utf8', function (err, data) {
-    data = JSON.parse( data );
-    delete data["comment" + req.body.id];
-    console.log( data );
-    fs.writeFile(__dirname + "/" + "comments.json", JSON.stringify(data), function (err) {
-      if (err) {
-        console.log(err);
-      }
+//post request
+app.post('/comments', (req, res) => {
+    fs.readFile('data.json', 'utf8', (err, data) => {
+        if (err) {
+            console.log('Error reading file');
+        }
+        let comments = JSON.parse(data);
+        comments.push(req.body);
+        fs.writeFile('data.json', JSON.stringify(comments), (err) => {
+            if (err) {
+                console.log('Error writing file');
+            }
+        });
+        res.send(req.body);
     });
-    res.end( JSON.stringify(data));
-  });
-})
-
-var server = app.listen(8081, function () {
-  var host = server.address().address;
-  var port = server.address().port;
-  console.log("Example app listening at http://%s:%s", host, port);
-})
+});
